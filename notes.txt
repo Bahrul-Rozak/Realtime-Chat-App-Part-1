@@ -1,0 +1,10 @@
+SETUP DATABASE
+SETUP TABLE
+SETUP PROJECT
+SETUP CONFIG KE DB
+SETUP REGISTER
+SETUP LOGIN
+SETUP CHAT.php (Tambahkan beberapa fungsi lagi)
+SETUP send_message.php
+SETUP load_message.php
+SETUP logout.php
