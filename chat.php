@@ -15,30 +15,34 @@ $username = $_SESSION['username'];
 $conn->query("UPDATE users SET last_seen = NOW() WHERE id = $user_id");
 
 // Ambil semua user lain sebagai daftar teman kecuali diri sendiri
-$sql = "SELECT id, username, last_seen FROM users WHERE id != $user_id ORDER BY username ASC";
+$sql = "SELECT id, username, last_seen, full_name, profile_picture FROM users WHERE id != $user_id ORDER BY username ASC";
 $result = $conn->query($sql);
 
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <title>Chat - WhatsApp Clone</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
         /* Custom CSS buat layout mirip WhatsApp */
-        body, html {
+        body,
+        html {
             height: 100%;
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #ECE5DD;
         }
+
         .app {
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
+
         /* Sidebar (list teman) */
         .sidebar {
             width: 320px;
@@ -47,6 +51,7 @@ $result = $conn->query($sql);
             display: flex;
             flex-direction: column;
         }
+
         .sidebar-header {
             padding: 15px 20px;
             background: #075E54;
@@ -57,10 +62,12 @@ $result = $conn->query($sql);
             align-items: center;
             justify-content: space-between;
         }
+
         .user-list {
             flex-grow: 1;
             overflow-y: auto;
         }
+
         .user-item {
             padding: 10px 20px;
             border-bottom: 1px solid #eee;
@@ -68,9 +75,12 @@ $result = $conn->query($sql);
             display: flex;
             align-items: center;
         }
-        .user-item:hover, .user-item.active {
+
+        .user-item:hover,
+        .user-item.active {
             background: #DCF8C6;
         }
+
         .user-item .avatar {
             width: 40px;
             height: 40px;
@@ -85,13 +95,16 @@ $result = $conn->query($sql);
             font-size: 1.1rem;
             user-select: none;
         }
+
         .user-item .username {
             flex-grow: 1;
         }
+
         .user-item .last-seen {
             font-size: 0.75rem;
             color: gray;
         }
+
         /* Chat window */
         .chat-window {
             flex-grow: 1;
@@ -99,6 +112,7 @@ $result = $conn->query($sql);
             flex-direction: column;
             background: #ECE5DD;
         }
+
         .chat-header {
             padding: 15px 20px;
             background: #075E54;
@@ -107,11 +121,13 @@ $result = $conn->query($sql);
             display: flex;
             align-items: center;
         }
+
         .chat-messages {
             flex-grow: 1;
             padding: 20px;
             overflow-y: auto;
         }
+
         .chat-input {
             padding: 10px 20px;
             background: #f0f0f0;
@@ -119,6 +135,7 @@ $result = $conn->query($sql);
             display: flex;
             align-items: center;
         }
+
         .chat-input textarea {
             resize: none;
             width: 100%;
@@ -129,6 +146,7 @@ $result = $conn->query($sql);
             outline: none;
             font-size: 1rem;
         }
+
         .chat-input button {
             margin-left: 10px;
             background: #128C7E;
@@ -142,6 +160,7 @@ $result = $conn->query($sql);
             align-items: center;
             justify-content: center;
         }
+
         /* Message bubbles */
         .message {
             max-width: 60%;
@@ -153,16 +172,19 @@ $result = $conn->query($sql);
             font-size: 0.9rem;
             line-height: 1.2rem;
         }
+
         .message.sent {
             background: #DCF8C6;
             float: right;
             border-bottom-right-radius: 0;
         }
+
         .message.received {
             background: white;
             float: left;
             border-bottom-left-radius: 0;
         }
+
         .message .timestamp {
             display: block;
             font-size: 0.7rem;
@@ -170,115 +192,165 @@ $result = $conn->query($sql);
             margin-top: 5px;
             text-align: right;
         }
+
+        .avatar img {
+            object-fit: cover;
+            width: 40px;
+            height: 40px;
+        }
     </style>
 </head>
+
 <body>
-<div class="app">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            Hi, <?= htmlspecialchars($username) ?>
-            <a href="logout.php" class="btn btn-sm btn-danger">Logout</a>
-        </div>
-        <div class="user-list" id="userList">
-            <?php while($user = $result->fetch_assoc()): 
+    <div class="app">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                Hi, <?= htmlspecialchars($username) ?>
+                <a href="logout.php" class="btn btn-sm btn-danger">Logout</a>
+                <a href="edit_profile.php" class="btn btn-sm btn-info">Edit Profile</a>
+            </div>
+
+
+
+            <?php while ($user = $result->fetch_assoc()):
                 $last_seen = strtotime($user['last_seen']);
                 $status = (time() - $last_seen) < 60 ? 'Online' : 'Offline';
             ?>
                 <div class="user-item" data-userid="<?= $user['id'] ?>">
-                    <div class="avatar"><?= strtoupper($user['username'][0]) ?></div>
-                    <div class="username"><?= htmlspecialchars($user['username']) ?></div>
+                    <div class="avatar">
+                        <?php if ($user['profile_picture']): ?>
+                            <img src="uploads/<?= $user['profile_picture'] ?>" class="rounded-circle" width="40" height="40">
+                        <?php else: ?>
+                            <?= strtoupper($user['username'][0]) ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="username">
+                        <?= htmlspecialchars($user['full_name'] ?: $user['username']) ?>
+                    </div>
                     <div class="last-seen"><?= $status ?></div>
                 </div>
             <?php endwhile; ?>
+
+            <div class="p-2">
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 Cari teman...">
+            </div>
+
+            <div class="user-list" id="userList">
+                <?php while ($user = $result->fetch_assoc()):
+                    $last_seen = strtotime($user['last_seen']);
+                    $status = (time() - $last_seen) < 60 ? 'Online' : 'Offline';
+                ?>
+                    <div class="user-item" data-userid="<?= $user['id'] ?>">
+                        <div class="avatar"><?= strtoupper($user['username'][0]) ?></div>
+                        <div class="username"><?= htmlspecialchars($user['username']) ?></div>
+                        <div class="last-seen"><?= $status ?></div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="chat-header" id="chatHeader">Pilih teman untuk mulai chat</div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input" id="chatInput" style="display:none;">
+                <textarea id="messageInput" placeholder="Ketik pesan..."></textarea>
+                <button id="sendBtn">&#9658;</button>
+            </div>
         </div>
     </div>
 
-    <div class="chat-window">
-        <div class="chat-header" id="chatHeader">Pilih teman untuk mulai chat</div>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input" id="chatInput" style="display:none;">
-            <textarea id="messageInput" placeholder="Ketik pesan..."></textarea>
-            <button id="sendBtn">&#9658;</button>
-        </div>
-    </div>
-</div>
+    <script>
+        let selectedUserId = null;
+        let userList = document.querySelectorAll('.user-item');
+        const chatHeader = document.getElementById('chatHeader');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
 
-<script>
-    let selectedUserId = null;
-    let userList = document.querySelectorAll('.user-item');
-    const chatHeader = document.getElementById('chatHeader');
-    const chatMessages = document.getElementById('chatMessages');
-    const chatInput = document.getElementById('chatInput');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
+        // Highlight selected user and load chat
+        userList.forEach(userItem => {
+            userItem.addEventListener('click', () => {
+                userList.forEach(ui => ui.classList.remove('active'));
+                userItem.classList.add('active');
+                selectedUserId = userItem.getAttribute('data-userid');
+                chatHeader.textContent = 'Chat dengan ' + userItem.querySelector('.username').textContent;
+                chatInput.style.display = 'flex';
+                chatMessages.innerHTML = '';
 
-    // Highlight selected user and load chat
-    userList.forEach(userItem => {
-        userItem.addEventListener('click', () => {
-            userList.forEach(ui => ui.classList.remove('active'));
-            userItem.classList.add('active');
-            selectedUserId = userItem.getAttribute('data-userid');
-            chatHeader.textContent = 'Chat dengan ' + userItem.querySelector('.username').textContent;
-            chatInput.style.display = 'flex';
-            chatMessages.innerHTML = '';
-
-            loadMessages();
-
-            // Set interval polling untuk ambil pesan baru tiap 2 detik
-            if (window.pollingInterval) clearInterval(window.pollingInterval);
-            window.pollingInterval = setInterval(loadMessages, 2000);
-        });
-    });
-
-    // Fungsi load pesan dari server via AJAX
-    function loadMessages() {
-        if (!selectedUserId) return;
-        fetch('load_message.php?user_id=' + selectedUserId)
-        .then(response => response.json())
-        .then(data => {
-            chatMessages.innerHTML = '';
-            data.forEach(msg => {
-                const div = document.createElement('div');
-                div.classList.add('message');
-                div.classList.add(msg.sender_id == <?= $user_id ?> ? 'sent' : 'received');
-                div.innerHTML = `${msg.message}<span class="timestamp">${msg.timestamp}</span>`;
-                chatMessages.appendChild(div);
-            });
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-    }
-
-    // Kirim pesan ke server
-    sendBtn.addEventListener('click', () => {
-        sendMessage();
-    });
-
-    // Kirim pesan pakai Enter
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (!message || !selectedUserId) return;
-        fetch('send_message.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `receiver_id=${selectedUserId}&message=${encodeURIComponent(message)}`
-        })
-        .then(response => response.text())
-        .then(data => {
-            if (data === 'success') {
-                messageInput.value = '';
                 loadMessages();
-            } else {
-                alert('Gagal kirim pesan!');
+
+                // Set interval polling untuk ambil pesan baru tiap 2 detik
+                if (window.pollingInterval) clearInterval(window.pollingInterval);
+                window.pollingInterval = setInterval(loadMessages, 2000);
+            });
+        });
+
+        // Fungsi load pesan dari server via AJAX
+        function loadMessages() {
+            if (!selectedUserId) return;
+            fetch('load_messages.php?user_id=' + selectedUserId)
+                .then(response => response.json())
+                .then(data => {
+                    chatMessages.innerHTML = '';
+                    data.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.classList.add('message');
+                        div.classList.add(msg.sender_id == <?= $user_id ?> ? 'sent' : 'received');
+                        div.innerHTML = `${msg.message}<span class="timestamp">${msg.timestamp}</span>`;
+                        chatMessages.appendChild(div);
+                    });
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+        }
+
+        // Kirim pesan ke server
+        sendBtn.addEventListener('click', () => {
+            sendMessage();
+        });
+
+        // Kirim pesan pakai Enter
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
         });
-    }
-</script>
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !selectedUserId) return;
+            fetch('send_message.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `receiver_id=${selectedUserId}&message=${encodeURIComponent(message)}`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if (data === 'success') {
+                        messageInput.value = '';
+                        loadMessages();
+                    } else {
+                        alert('Gagal kirim pesan!');
+                    }
+                });
+        }
+    </script>
+
+    <script>
+        document.getElementById('searchInput').addEventListener('input', function() {
+            let query = this.value;
+
+            fetch('search_user.php?q=' + encodeURIComponent(query))
+                .then(res => res.text())
+                .then(data => {
+                    document.getElementById('userList').innerHTML = data;
+                });
+        });
+    </script>
+
 </body>
+
 </html>
